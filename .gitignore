@@ -35,3 +35,7 @@ Thumbs.db
 
 # todo
 TODO.md
+
+# .bk
+*.bk
+*.bk.*
