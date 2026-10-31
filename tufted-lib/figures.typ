@@ -1,9 +1,17 @@
 #import "layout.typ": margin-note
 
 #let template-figures(content) = {
+  // Constrain HTML tables to the text column and let wide tables scroll.
+  show table: it => if target() == "html" {
+    html.div(class: "table-scroll", it)
+  } else {
+    it
+  }
+
   // Redefine figure caption to use marginnote
   show figure.caption: it => html.span(
-    class: "marginnote",
+    class: "marginnote sidenote-caption",
+    role: "note",
     it.supplement + sym.space.nobreak + it.counter.display() + it.separator + it.body,
   )
 

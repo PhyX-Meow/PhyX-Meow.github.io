@@ -63,10 +63,6 @@ section > svg {
 	position: relative;
 	left: 27.5%;
 	transform: translateX(-50%);
-}
-
-section > img,
-section > svg {
 	display: block;
 }
 
@@ -76,10 +72,6 @@ section > figure:not(.fullwidth) > svg {
 	max-width: 100%;
 	margin-left: auto;
 	margin-right: auto;
-}
-
-section > figure:not(.fullwidth) > img,
-section > figure:not(.fullwidth) > svg {
 	display: block;
 }
 
@@ -218,14 +210,20 @@ figure > .math-block {
 TYPOGRAPHY
 *******************************************************************************/
 
+hr {
+	border: 0;
+	border-top: 1px solid var(--theme-table-border, #ccc);
+	margin: 1.5rem 0;
+}
+
 /* Paragraph alignment and spacing */
 p {
 	text-align: justify;
 	text-justify: inter-ideograph;
-	line-height: 2.2rem;
 }
 
-/* List spacing */
+/* Paragraph and list spacing */
+p,
 ul,
 ol,
 dl {
@@ -243,30 +241,33 @@ h5 {
 	color: #111;
 }
 
+h2,
+h3,
+h4,
+h5 {
+	line-height: 1.2;
+}
+
 h2 {
 	font-size: 2.3rem;
-	line-height: 1.2;
 	margin-top: 2rem;
 	margin-bottom: 1rem;
 }
 
 h3 {
 	font-size: 2rem;
-	line-height: 1.2;
 	margin-top: 1.5rem;
 	margin-bottom: 0.8rem;
 }
 
 h4 {
 	font-size: 1.75rem;
-	line-height: 1.2;
 	margin-top: 1.2rem;
 	margin-bottom: 0.5rem;
 }
 
 h5 {
 	font-size: 1.5rem;
-	line-height: 1.2;
 	margin-top: 1rem;
 	margin-bottom: 0.5rem;
 }
@@ -363,15 +364,11 @@ code {
 	border: 1px solid #e7e7e7;
 }
 
-/* Code blocks in lists */
+/* Code blocks in lists and figures */
 li pre,
 ul pre,
 ol pre,
-dl pre {
-	width: 100%;
-}
-
-/* Code blocks in figures */
+dl pre,
 figure pre {
 	width: 100%;
 }
@@ -461,9 +458,28 @@ table {
 	line-height: 1.2;
 }
 
-/* Naked tables behave like the main text column */
-section > table {
+/* A table cell has its own float context; keep its notes below earlier floats. */
+table:has(.marginnote) {
+	clear: right;
+}
+
+/* Keep narrow tables compact; scroll only when their content is too wide. */
+.table-scroll {
+	box-sizing: border-box;
+	width: fit-content;
+	max-width: 100%;
+	overflow-x: auto;
+	margin: 1.5em auto;
+}
+
+.table-scroll > table {
 	width: auto;
+	max-width: none;
+	margin: 0;
+}
+
+section > .table-scroll {
+	max-width: 55%;
 	position: relative;
 	left: 27.5%;
 	transform: translateX(-50%);
@@ -500,7 +516,8 @@ table tbody tr:hover {
 	}
 
 	/* Reset naked table positioning on mobile */
-	section > table {
+	section > .table-scroll {
+		max-width: 100%;
 		left: 0;
 		transform: none;
 		margin: 1.5em auto;
@@ -514,13 +531,8 @@ table tbody tr:hover {
 	table td {
 		padding: 0.4em 0.6em;
 	}
-}
 
-/*******************************************************************************
-RESPONSIVE LAYOUT
-*******************************************************************************/
-
-@media (max-width: 760px) {
+	/* Responsive content layout */
 	.math-block {
 		width: 100%;
 	}
@@ -552,6 +564,11 @@ RESPONSIVE LAYOUT
 		display: block;
 	}
 
+	/* Margin citations collapse too; tapping the citation expands them */
+	.sidenote-cite:not(.is-expanded) {
+		display: none;
+	}
+
 	/* Limit image size inside expanded margin notes */
 	.marginnote img,
 	.marginnote svg {
@@ -559,11 +576,6 @@ RESPONSIVE LAYOUT
 		max-height: 50vh;
 		margin: 0.4rem auto;
 		display: block;
-	}
-
-	sup.footnote-ref {
-		line-height: 1;
-		top: -0.2em;
 	}
 
 	sup.footnote-ref > a.footnote-ref-link {
@@ -683,7 +695,7 @@ sup.footnote-ref {
 }
 
 .footnote-ref,
-.footnote-ref + .marginnote {
+.sidenote-footnote {
 	--highlight: transparent;
 	background-color: var(--highlight);
 	box-shadow: 0 0 0 5px var(--highlight);
@@ -705,9 +717,57 @@ sup.footnote-ref {
 	transition-delay: 0s;
 }
 
+.sidenote-anchor {
+	font: inherit;
+	line-height: inherit;
+	pointer-events: none;
+}
+
 @media (min-width: 761px) {
+	/* Manual notes must not create an otherwise empty line in the text column. */
+	.sidenote-anchor {
+		display: none;
+	}
+
+	p.sidenote-only {
+		display: contents;
+	}
+
 	sup.marginnote-ref {
 		display: none;
+	}
+
+	/* Keep fallback note geometry stable when notes are nested in lists or blocks. */
+	article > section {
+		/* Fractions of the section width; JS reads the column start as well. */
+		--sidenote-content-width: 0.55;
+		--sidenote-column-start: 0.605;
+		--sidenote-column-width: 0.275;
+		container-type: inline-size;
+	}
+
+	article > section .marginnote {
+		inline-size: calc(100cqi * var(--sidenote-column-width));
+		margin-inline-end: calc(
+			100cqi *
+			(
+				var(--sidenote-content-width) -
+				var(--sidenote-column-start) -
+				var(--sidenote-column-width)
+			)
+		);
+	}
+
+	/* A nested float cannot avoid its parent's text. Keep nested notes in
+	   normal flow so their height is included in the outer side note. */
+	article > section .marginnote .marginnote {
+		display: block;
+		float: none;
+		clear: none;
+		position: static;
+		inline-size: auto;
+		min-inline-size: 0;
+		margin: 0.5em 0;
 	}
 }
 
@@ -786,53 +846,119 @@ TABLE OF CONTENTS
 
 .toc-sidebar {
 	position: fixed;
-	top: 15rem;
-	left: 1%;
-	z-index: 10;
-	display: none;
-	width: 10.5%;
-	max-height: calc(100vh - 11rem);
+	display: block;
+	top: 50%;
+	left: 3.5rem;
+	z-index: 1001;
+	box-sizing: border-box;
+	width: max-content;
+	max-width: min(26rem, calc(100vw - 4.5rem));
+	max-height: calc(100dvh - 2rem);
 	overflow-y: auto;
-	color: var(--theme-line-numbers-text, #aaa);
+	padding: 0.85rem 1rem;
+	border: 1px solid var(--theme-table-border, #ccc);
+	border-radius: 1rem;
+	background: var(--theme-bg, #fffff8);
+	color: var(--theme-text, #111);
+	box-shadow: 0 0.3rem 1rem rgb(0 0 0 / 10%);
+	visibility: hidden;
+	opacity: 0;
+	transform: translate(-0.5rem, -50%);
+	transition:
+		opacity 160ms ease,
+		transform 160ms ease,
+		visibility 160ms;
+}
+
+.toc-sidebar.is-open {
+	visibility: visible;
+	opacity: 1;
+	transform: translate(0, -50%);
 }
 
 .toc-sidebar ol {
+	width: auto;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
 .toc-sidebar li {
-	margin: 0 0 0.2em;
+	margin: 0.15em 0;
 }
 
-.toc-sidebar .toc-after-title {
-	padding-left: 0.8em;
+.toc-sidebar li.toc-h3 {
+	padding-left: 1.2rem;
 }
 
 .toc-sidebar a:any-link {
 	display: block;
-	color: inherit;
-	font-size: 0.95rem;
-	line-height: 1.1;
+	color: var(--theme-copy-btn-text, #666);
+	font-size: 1.15rem;
+	line-height: 1.3;
 	text-decoration: none;
-	border-left: 1px solid transparent;
-	padding-left: 0.6em;
-	transition:
-		border-color 120ms ease,
-		color 120ms ease;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	transition: color 120ms ease;
 }
 
 .toc-sidebar a:hover,
 .toc-sidebar a:focus-visible,
 .toc-sidebar a.is-active {
-	color: var(--theme-copy-btn-hover-text, #333);
-	border-left-color: currentColor;
+	color: var(--theme-heading, #111);
 	outline: none;
 }
 
-@media (min-width: 1200px) {
-	.toc-sidebar {
-		display: block;
-	}
+.toc-sidebar a.is-active {
+	font-weight: bold;
+}
+
+.toc-toggle {
+	position: fixed;
+	top: 50%;
+	left: 0.5rem;
+	z-index: 1002;
+	display: flex;
+	max-height: min(24rem, 65vh);
+	padding: 0.9rem 0.65rem;
+	transform: translateY(-50%);
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.72rem;
+	overflow-y: auto;
+	border: none;
+	border-radius: 1rem;
+	background: transparent;
+	color: var(--theme-copy-btn-text, #666);
+	cursor: pointer;
+	transition: background-color 120ms ease;
+}
+
+.toc-toggle:hover {
+	background: rgba(128, 128, 128, 0.1);
+}
+
+.toc-toggle:focus-visible {
+	outline: 2px solid var(--theme-copy-btn-text, #666);
+	outline-offset: 2px;
+}
+
+.toc-toggle-line {
+	width: 1.35rem;
+	height: 2px;
+	flex: 0 0 auto;
+	background: currentColor;
+	opacity: 0.4;
+	transition:
+		width 120ms ease,
+		background-color 120ms ease;
+}
+
+.toc-toggle-line.is-indented {
+	width: 0.85rem;
+}
+
+.toc-toggle-line.is-active {
+	background: var(--theme-heading, #111);
+	opacity: 0.8;
 }

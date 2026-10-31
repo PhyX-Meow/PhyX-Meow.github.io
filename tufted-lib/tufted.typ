@@ -39,6 +39,9 @@
   css: ("/assets/custom.css",),
   js-scripts: (),
 
+  // Copy bibliography entries into the margin next to author-date citations
+  margin-citations: false,
+
   content,
 ) = {
   // Apply styling
@@ -48,8 +51,15 @@
   show: template-figures
   show: template-links
   show: template-byline.with(author: author, date: date, extra-info: extra-info)
+  show line: it => if target() == "html" { html.hr() } else { it }
 
   set text(lang: lang)
+  set raw(syntaxes: (
+    "custom-syntaxes/Just.sublime-syntax",
+    "custom-syntaxes/Mermaid.sublime-syntax",
+    "custom-syntaxes/JSON5.sublime-syntax",
+    "custom-syntaxes/JSONC.sublime-syntax",
+  ))
 
   html.html(
     lang: lang,
@@ -92,6 +102,9 @@
         for (js-src) in (base-js + js-scripts).dedup() {
           html.script(src: js-src)
         }
+        // Must run before sidenote-layout.js so the new notes get laid out
+        if margin-citations { html.script(type: "module", src: "/assets/cite-margin.js") }
+        html.script(type: "module", src: "/assets/sidenote-layout.js")
       })
 
       // Body
@@ -131,7 +144,7 @@
                 )
               },
             )
-          }
+          },
         )
 
         // Main content
